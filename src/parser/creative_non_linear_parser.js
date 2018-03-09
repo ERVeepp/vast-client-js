@@ -1,0 +1,74 @@
+/*
+ * decaffeinate suggestions:
+ * DS101: Remove unnecessary use of Array.from
+ * DS207: Consider shorter variations of null checks
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+import ParserUtils from './parser_utils.coffee';
+import { CreativeNonLinear } from '../creative/creative_non_linear';
+import { NonLinear } from '../non_linear';
+
+class CreativeNonLinearParser {
+    constructor() {
+        this.utils = new ParserUtils();
+    }
+
+    parse(creativeElement, creativeAttributes) {
+        const creative = new CreativeNonLinear(creativeAttributes);
+
+        for (let trackingEventsElement of Array.from(this.utils.childrenByName(creativeElement, "TrackingEvents"))) {
+            for (let trackingElement of Array.from(this.utils.childrenByName(trackingEventsElement, "Tracking"))) {
+                const eventName = trackingElement.getAttribute("event");
+                const trackingURLTemplate = this.utils.parseNodeText(trackingElement);
+                if ((eventName != null) && (trackingURLTemplate != null)) {
+                    if (creative.trackingEvents[eventName] == null) { creative.trackingEvents[eventName] = []; }
+                    creative.trackingEvents[eventName].push(trackingURLTemplate);
+                }
+            }
+        }
+
+        for (let nonlinearResource of Array.from(this.utils.childrenByName(creativeElement, "NonLinear"))) {
+            const nonlinearAd = new NonLinear();
+            nonlinearAd.id = nonlinearResource.getAttribute("id") || null;
+            nonlinearAd.width = nonlinearResource.getAttribute("width");
+            nonlinearAd.height = nonlinearResource.getAttribute("height");
+            nonlinearAd.expandedWidth = nonlinearResource.getAttribute("expandedWidth");
+            nonlinearAd.expandedHeight = nonlinearResource.getAttribute("expandedHeight");
+            nonlinearAd.scalable = this.utils.parseBoolean(nonlinearResource.getAttribute("scalable"));
+            nonlinearAd.maintainAspectRatio = this.utils.parseBoolean(nonlinearResource.getAttribute("maintainAspectRatio"));
+            nonlinearAd.minSuggestedDuration = this.utils.parseDuration(nonlinearResource.getAttribute("minSuggestedDuration"));
+            nonlinearAd.apiFramework = nonlinearResource.getAttribute("apiFramework");
+
+            for (let htmlElement of Array.from(this.utils.childrenByName(nonlinearResource, "HTMLResource"))) {
+                nonlinearAd.type = htmlElement.getAttribute("creativeType") || 'text/html';
+                nonlinearAd.htmlResource = this.utils.parseNodeText(htmlElement);
+            }
+
+            for (let iframeElement of Array.from(this.utils.childrenByName(nonlinearResource, "IFrameResource"))) {
+                nonlinearAd.type = iframeElement.getAttribute("creativeType") || 0;
+                nonlinearAd.iframeResource = this.utils.parseNodeText(iframeElement);
+            }
+
+            for (let staticElement of Array.from(this.utils.childrenByName(nonlinearResource, "StaticResource"))) {
+                nonlinearAd.type = staticElement.getAttribute("creativeType") || 0;
+                nonlinearAd.staticResource = this.utils.parseNodeText(staticElement);
+            }
+
+            const adParamsElement = this.utils.childByName(nonlinearResource, "AdParameters");
+            if (adParamsElement != null) {
+                nonlinearAd.adParameters = this.utils.parseNodeText(adParamsElement);
+            }
+
+            nonlinearAd.nonlinearClickThroughURLTemplate = this.utils.parseNodeText(this.utils.childByName(nonlinearResource, "NonLinearClickThrough"));
+            for (let clickTrackingElement of Array.from(this.utils.childrenByName(nonlinearResource, "NonLinearClickTracking"))) {
+                nonlinearAd.nonlinearClickTrackingURLTemplates.push(this.utils.parseNodeText(clickTrackingElement));
+            }
+
+            creative.variations.push(nonlinearAd);
+        }
+
+        return creative;
+    }
+}
+
+export default CreativeNonLinearParser;
