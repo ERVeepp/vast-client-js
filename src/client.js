@@ -99,8 +99,8 @@ export class VASTClient {
       );
     }
 
-    return this.vastParser.parse(url, options, (response, err) => {
-      return cb(response, err);
+    return this.vastParser.getAndParse(url, options, (response, err) => {
+      return cb(err, response);
     });
   }
 }
