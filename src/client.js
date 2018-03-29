@@ -1,5 +1,5 @@
 import { Util } from './util';
-import { VASTParser } from './parser/parser';
+import { VASTParser } from './parser/vast_parser';
 
 export class VASTClient {
   constructor() {
